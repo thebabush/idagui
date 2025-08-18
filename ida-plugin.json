@@ -1,0 +1,8 @@
+{
+    "IDAMetadataDescriptorVersion": 1,
+    "plugin": {
+        "pluginmetadataversion": 1,
+        "name": "imgui_bundle plugin",
+        "entryPoint": "plugin.py"
+    }
+}

@@ -1,0 +1,29 @@
+{
+    // PYTHON
+    "[python]": {
+        "diffEditor.ignoreTrimWhitespace": false,
+        "editor.formatOnSave": true,
+        "files.insertFinalNewline": true
+    },
+    // Disable VSCode's built-in type checker
+    "python.analysis.typeCheckingMode": "off",
+    // MYPY
+    "mypy-type-checker.cwd": "${workspaceFolder}",
+    "mypy-type-checker.path": [
+        // VSCode mypy bug workaround (see comment in script)
+        "${workspaceFolder}/.vscode/mypy.sh"
+    ],
+    "mypy-type-checker.args": [
+        "--config-file=${workspaceFolder}/mypy.ini"
+    ],
+    "mypy-type-checker.reportingScope": "workspace",
+    "mypy-type-checker.interpreter": [
+        "uv",
+        "run",
+        "python"
+    ],
+    "mypy-type-checker.preferDaemon": true,
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    // GIT
+    "git.ignoreLimitWarning": true
+}
