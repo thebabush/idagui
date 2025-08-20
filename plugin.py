@@ -1,4 +1,5 @@
 import enum
+import hashlib
 import os
 import sys
 import traceback
@@ -340,6 +341,7 @@ class DemoState:
         self.current_function_index: int | None = None
         self.current_temporary_function_index: int | None = None
         self.filter_text = ''
+        self.disasm_hash = ''
 
     def best_function_index(self) -> int | None:
         if self.current_temporary_function_index is not None:
@@ -440,7 +442,19 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
                 imgui.separator()
                 disasm_text = get_function_disassembly(function.address)
 
-                self.editor.set_text(disasm_text if disasm_text else '// no disassembly available')
+                # Calculate hash of disasm text and only update if it changed
+                if disasm_text:
+                    disasm_cache_key = hashlib.md5(disasm_text.encode()).hexdigest()
+                else:
+                    disasm_cache_key = hashlib.md5(b'// no disassembly available').hexdigest()
+
+                # Well, some hacker might collide hashes on purpose, but we should be fine
+                if disasm_cache_key != self.state.disasm_hash:
+                    self.state.disasm_hash = disasm_cache_key
+                    self.editor.set_text(
+                        disasm_text if disasm_text else '// no disassembly available'
+                    )
+
                 self.editor.render(
                     '##disasm-text',
                     False,
