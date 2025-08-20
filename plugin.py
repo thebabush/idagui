@@ -358,6 +358,7 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
             imgui.text('Functions:')
 
             # Filter input
+            imgui.set_next_item_width(-1)
             _, self.state.filter_text = imgui.input_text_with_hint(
                 '##filter-text', '<filter>', self.state.filter_text
             )
