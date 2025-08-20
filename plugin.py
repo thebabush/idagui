@@ -14,12 +14,11 @@ from imgui_bundle import imgui
 from imgui_bundle.python_backends import opengl_backend_programmable
 from OpenGL import GL
 
-
 IDAGUI_AUTOSTART = os.environ.get('IDAGUI_AUTOSTART', None) is not None
 
 
 @contextmanager
-def temp_environ(**envvars):
+def temp_environ(**envvars: Any) -> Any:
     old_env = {k: os.environ.get(k) for k in envvars}
     try:
         os.environ.update({k: str(v) for k, v in envvars.items()})
@@ -127,54 +126,54 @@ def qt_key_to_imgui(key: QtCore.Qt.Key) -> imgui.Key | None:
 
 # --- QWindow subclass: forwards events to handler ---
 class ImGuiGLWindow(QtGui.QWindow):
-    def __init__(self, parent=None, event_handler=None):
+    def __init__(self, parent: Any = None, event_handler: Any = None) -> None:
         super().__init__(parent)
         self.setSurfaceType(QtGui.QWindow.SurfaceType.OpenGLSurface)
         self.event_handler = event_handler
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.MOUSE_PRESS, e)
         super().mousePressEvent(e)
 
-    def mouseReleaseEvent(self, e):
+    def mouseReleaseEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.MOUSE_RELEASE, e)
         super().mouseReleaseEvent(e)
 
-    def mouseMoveEvent(self, e):
+    def mouseMoveEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.MOUSE_MOVE, e)
         super().mouseMoveEvent(e)
 
-    def wheelEvent(self, e):
+    def wheelEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.WHEEL, e)
         super().wheelEvent(e)
 
-    def keyPressEvent(self, e):
+    def keyPressEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.KEY_PRESS, e)
         super().keyPressEvent(e)
 
-    def keyReleaseEvent(self, e):
+    def keyReleaseEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.KEY_RELEASE, e)
         super().keyReleaseEvent(e)
 
-    def focusInEvent(self, e):
+    def focusInEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.FOCUS_IN, e)
         super().focusInEvent(e)
 
-    def focusOutEvent(self, e):
+    def focusOutEvent(self, e: Any) -> None:
         if self.event_handler:
             self.event_handler(EventType.FOCUS_OUT, e)
         super().focusOutEvent(e)
 
 
 class ImGuiOpenGLWidget(QtWidgets.QWidget):
-    def __init__(self, ini_prefix: str, parent=None):
+    def __init__(self, ini_prefix: str, parent: Any = None) -> None:
         super().__init__(parent)
 
         # GL window
@@ -216,7 +215,7 @@ class ImGuiOpenGLWidget(QtWidgets.QWidget):
         self.timer.timeout.connect(self.render)
         self.timer.start(16)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Cleanup ImGui context when widget is destroyed."""
         if self.imgui_context:
             imgui.set_current_context(self.imgui_context)
@@ -224,7 +223,7 @@ class ImGuiOpenGLWidget(QtWidgets.QWidget):
                 self.renderer.shutdown()
             imgui.destroy_context(self.imgui_context)
 
-    def handle_event(self, event_type: EventType, event):
+    def handle_event(self, event_type: EventType, event: Any) -> None:
         io = imgui.get_io()
         if event_type == EventType.MOUSE_PRESS:
             button = qt_mouse_button_to_imgui(event.button())
@@ -259,7 +258,7 @@ class ImGuiOpenGLWidget(QtWidgets.QWidget):
         """Override this method to render your ImGui content."""
         imgui.show_demo_window()
 
-    def render(self, *args, **kwargs):
+    def render(self, *args: Any, **kwargs: Any) -> None:
         if not self.opengl_window.isExposed():
             return
 
@@ -295,7 +294,8 @@ class ImGuiOpenGLWidget(QtWidgets.QWidget):
             # Always call render to complete the frame, even if render_content fails
             imgui.render()
 
-        self.renderer.render(imgui.get_draw_data())
+        if self.renderer:
+            self.renderer.render(imgui.get_draw_data())
         self.context.swapBuffers(self.opengl_window)
 
 
@@ -306,12 +306,12 @@ class Function:
 
 
 class DemoState:
-    def __init__(self):
+    def __init__(self) -> None:
         self.functions = [
             Function(name=ida_name.get_name(ea), address=ea) for ea in idautils.Functions()
         ]
-        self.current_function_index = None
-        self.current_temporary_function_index = None
+        self.current_function_index: int | None = None
+        self.current_temporary_function_index: int | None = None
         self.filter_text = ''
 
     def best_function_index(self) -> int | None:
@@ -323,7 +323,7 @@ class DemoState:
 class DemoImGuiWidget(ImGuiOpenGLWidget):
     """Example ImGui widget showing how to subclass ImGuiOpenGLWidget."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         super().__init__(parent)
         self.counter = 0
         self.state = DemoState()
@@ -423,7 +423,7 @@ class ImGuiPluginMainWidget(ida_kernwin.PluginForm):
     def OnClose(self, _form: Any) -> None:
         pass
 
-    def Show(self, *args) -> None:
+    def Show(self, *args: Any) -> None:
         super().Show(self.name)
 
 
@@ -446,7 +446,7 @@ class ImGuiPlugin(ida_idaapi.plugin_t):
 
         return ida_idaapi.PLUGIN_KEEP
 
-    def open_gui(self):
+    def open_gui(self) -> None:
         main_widget = ImGuiPluginMainWidget(f'ImGui Plugin {self.counter}')
         main_widget.Show()
         self.counter += 1
