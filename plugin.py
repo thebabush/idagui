@@ -301,6 +301,10 @@ class ImGuiOpenGLWidget(QtWidgets.QWidget):
         self.context.swapBuffers(self.opengl_window)
 
 
+def format_label_value(label: str, value: str, alignment: int = 12) -> str:
+    return f'{label:<{alignment}}: {value}'
+
+
 def get_function_disassembly(func_ea: int) -> str | None:
     try:
         funk = ida_funcs.get_func(func_ea)
@@ -418,12 +422,17 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
             best_function_index = self.state.best_function_index()
             if best_function_index is not None:
                 function = self.state.functions[best_function_index]
-                imgui.text(f'Name:    {function.name}')
-                imgui.text(f'Address: {function.address:08X}')
+                imgui.text(format_label_value('Name', function.name))
+
+                # Get demangled name
+                demangled_name = ida_name.get_demangled_name(function.address, 0, 0, 0)
+                if demangled_name and demangled_name != function.name:
+                    imgui.text(format_label_value('Demangled', demangled_name))
+
+                imgui.text(format_label_value('Address', f'{function.address:08X}'))
 
                 # Disassembly section
                 imgui.separator()
-                imgui.text('Disassembly:')
                 disasm_text = get_function_disassembly(function.address)
 
                 # Use input_text_multiline for a scrollable text area
