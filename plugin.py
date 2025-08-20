@@ -15,6 +15,9 @@ from imgui_bundle.python_backends import opengl_backend_programmable
 from OpenGL import GL
 
 
+IDAGUI_AUTOSTART = os.environ.get('IDAGUI_AUTOSTART', None) is not None
+
+
 @contextmanager
 def temp_environ(**envvars):
     old_env = {k: os.environ.get(k) for k in envvars}
@@ -308,6 +311,13 @@ class DemoState:
             Function(name=ida_name.get_name(ea), address=ea) for ea in idautils.Functions()
         ]
         self.current_function_index = None
+        self.current_temporary_function_index = None
+        self.filter_text = ''
+
+    def best_function_index(self) -> int | None:
+        if self.current_temporary_function_index is not None:
+            return self.current_temporary_function_index
+        return self.current_function_index
 
 
 class DemoImGuiWidget(ImGuiOpenGLWidget):
@@ -346,23 +356,45 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
             # Left column
             imgui.table_next_column()
             imgui.text('Functions:')
+
+            # Filter input
+            _, self.state.filter_text = imgui.input_text_with_hint(
+                '##filter-text', '<filter>', self.state.filter_text
+            )
+            imgui.set_item_default_focus()
+
             if imgui.begin_list_box('##functions-list-box', imgui.ImVec2(-1, -1)):
-                for i, function in enumerate(self.state.functions):
-                    is_selected = i == self.state.current_function_index
-                    clicked, _ = imgui.selectable(
-                        f'{function.name}', i == self.state.current_function_index
-                    )
+                self.state.current_temporary_function_index = None
+
+                # Filter functions based on the filter text
+                filtered_functions = []
+                if self.state.filter_text:
+                    filter_lower = self.state.filter_text.lower()
+                    for i, function in enumerate(self.state.functions):
+                        if filter_lower in function.name.lower():
+                            filtered_functions.append((i, function))
+                else:
+                    filtered_functions = list(enumerate(self.state.functions))
+
+                for original_index, function in filtered_functions:
+                    is_selected = original_index == self.state.current_function_index
+                    clicked, _ = imgui.selectable(f'{function.name}', is_selected)
                     if clicked:
-                        self.state.current_function_index = i
+                        self.state.current_function_index = original_index
                         if is_selected:
                             imgui.set_item_default_focus()
+
+                    if imgui.is_item_hovered():
+                        self.state.current_temporary_function_index = original_index
+
                 imgui.end_list_box()
 
             # Right column
             imgui.table_next_column()
             imgui.text('Function info:')
-            if self.state.current_function_index is not None:
-                function = self.state.functions[self.state.current_function_index]
+            best_function_index = self.state.best_function_index()
+            if best_function_index is not None:
+                function = self.state.functions[best_function_index]
                 imgui.text(f'Name:    {function.name}')
                 imgui.text(f'Address: {function.address:08X}')
 
@@ -405,12 +437,22 @@ class ImGuiPlugin(ida_idaapi.plugin_t):
     counter: int = 0
 
     def init(self) -> Any:
+        def auto_open_gui() -> int:
+            self.open_gui()
+            return -1  # stop timer
+
+        if IDAGUI_AUTOSTART:
+            ida_kernwin.register_timer(0, auto_open_gui)
+
         return ida_idaapi.PLUGIN_KEEP
 
-    def run(self, _arg: Any) -> None:
+    def open_gui(self):
         main_widget = ImGuiPluginMainWidget(f'ImGui Plugin {self.counter}')
         main_widget.Show()
         self.counter += 1
+
+    def run(self, _arg: Any) -> None:
+        self.open_gui()
 
     def term(self) -> None:
         pass

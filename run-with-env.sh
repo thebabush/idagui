@@ -6,4 +6,7 @@ unset VIRTUAL_ENV
 export QT_API=PySide6
 export FORCE_QT_API=PySide6
 
+# Auto-open baby (:
+export IDAGUI_AUTOSTART=1
+
 UV_PROJECT_ENVIRONMENT=.no-pyside-env uv run --no-dev "$@"
