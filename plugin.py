@@ -6,8 +6,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+import ida_funcs
 import ida_idaapi
 import ida_kernwin
+import ida_lines
 import ida_name
 import idautils
 from imgui_bundle import imgui
@@ -299,6 +301,27 @@ class ImGuiOpenGLWidget(QtWidgets.QWidget):
         self.context.swapBuffers(self.opengl_window)
 
 
+def get_function_disassembly(func_ea: int) -> str | None:
+    try:
+        funk = ida_funcs.get_func(func_ea)
+        if not funk:
+            return None
+
+        lines = []
+        for address in funk.code_items():
+            disasm = ida_lines.generate_disasm_line(address, 0)
+            if not disasm:
+                continue
+
+            disasm = ida_lines.tag_remove(disasm)
+            lines.append(f'{address:08X}  {disasm}')
+
+        return '\n'.join(lines)
+    except Exception as _:
+        print(traceback.format_exc(), file=sys.stderr)
+        return None
+
+
 @dataclass
 class Function:
     name: str
@@ -392,12 +415,24 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
 
             # Right column
             imgui.table_next_column()
-            imgui.text('Function info:')
             best_function_index = self.state.best_function_index()
             if best_function_index is not None:
                 function = self.state.functions[best_function_index]
                 imgui.text(f'Name:    {function.name}')
                 imgui.text(f'Address: {function.address:08X}')
+
+                # Disassembly section
+                imgui.separator()
+                imgui.text('Disassembly:')
+                disasm_text = get_function_disassembly(function.address)
+
+                # Use input_text_multiline for a scrollable text area
+                _, _ = imgui.input_text_multiline(
+                    '##disasm-text',
+                    disasm_text if disasm_text else '<no disassembly available>',
+                    imgui.ImVec2(-1, -1),
+                    imgui.InputTextFlags_.read_only.value,
+                )
 
             imgui.end_table()
 
