@@ -388,7 +388,6 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
             imgui.table_setup_column('Details', imgui.TableColumnFlags_.width_stretch.value)
             # Left column
             imgui.table_next_column()
-            imgui.text('Functions:')
 
             # Filter input
             imgui.set_next_item_width(-1)
