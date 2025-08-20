@@ -12,7 +12,7 @@ import ida_kernwin
 import ida_lines
 import ida_name
 import idautils
-from imgui_bundle import imgui
+from imgui_bundle import imgui, imgui_color_text_edit
 from imgui_bundle.python_backends import opengl_backend_programmable
 from OpenGL import GL
 
@@ -355,6 +355,12 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
         self.counter = 0
         self.state = DemoState()
 
+        self.editor = imgui_color_text_edit.TextEditor()
+        self.editor.set_language_definition(self.editor.LanguageDefinitionId.c)
+        self.editor.set_read_only_enabled(True)
+        self.editor.set_show_whitespaces_enabled(False)
+        self.editor.set_show_line_numbers_enabled(False)
+
     def render_content(self) -> None:
         """Render ImGui demo content as a fullscreen window."""
         # Get the display size to make the window fullscreen
@@ -435,12 +441,12 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
                 imgui.separator()
                 disasm_text = get_function_disassembly(function.address)
 
-                # Use input_text_multiline for a scrollable text area
-                _, _ = imgui.input_text_multiline(
+                self.editor.set_text(disasm_text if disasm_text else '// no disassembly available')
+                self.editor.render(
                     '##disasm-text',
-                    disasm_text if disasm_text else '<no disassembly available>',
+                    False,
                     imgui.ImVec2(-1, -1),
-                    imgui.InputTextFlags_.read_only.value,
+                    False,
                 )
 
             imgui.end_table()
