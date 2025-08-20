@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+import ida_bytes
 import ida_funcs
 import ida_idaapi
 import ida_kernwin
@@ -313,13 +314,17 @@ def get_function_disassembly(func_ea: int) -> str | None:
             return None
 
         lines = []
-        for address in funk.code_items():
-            disasm = ida_lines.generate_disasm_line(address, 0)
-            if not disasm:
-                continue
+        for chunk in ida_funcs.func_tail_iterator_t(funk):
+            chunk_end = chunk.end_ea
+            address = chunk.start_ea
+            while address < chunk_end:
+                disasm = ida_lines.generate_disasm_line(address, 0)
+                if disasm:
+                    disasm = ida_lines.tag_remove(disasm)
+                    lines.append(f'{address:08X}  {disasm}')
+                address = ida_bytes.next_head(address, ida_idaapi.BADADDR)
 
-            disasm = ida_lines.tag_remove(disasm)
-            lines.append(f'{address:08X}  {disasm}')
+            lines.append('')
 
         return '\n'.join(lines)
     except Exception as _:
@@ -415,9 +420,12 @@ class DemoImGuiWidget(ImGuiOpenGLWidget):
                     is_selected = original_index == self.state.current_function_index
                     clicked, _ = imgui.selectable(f'{function.name}', is_selected)
                     if clicked:
-                        self.state.current_function_index = original_index
                         if is_selected:
-                            imgui.set_item_default_focus()
+                            # Unselect
+                            self.state.current_function_index = None
+                        else:
+                            # Select
+                            self.state.current_function_index = original_index
 
                     if imgui.is_item_hovered():
                         self.state.current_temporary_function_index = original_index
