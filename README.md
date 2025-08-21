@@ -8,6 +8,10 @@ Don't even think about it, young person.
 
 Stop reading!
 
+## Screenshot
+
+[HERE](https://x.com/pmontesel/status/1958339218838818924)
+
 ## Usage
 
 But, if you wish to... (:
